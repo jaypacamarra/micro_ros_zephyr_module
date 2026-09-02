@@ -1,6 +1,8 @@
 UROS_DIR = $(COMPONENT_PATH)/micro_ros_src
 DEBUG ?= 0
 
+.DEFAULT_GOAL := all
+
 ifeq ($(DEBUG), 1)
 	BUILD_TYPE = Debug
 else
