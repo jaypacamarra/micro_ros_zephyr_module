@@ -8,6 +8,8 @@ ifeq ($(DEBUG), 1)
 else
 	BUILD_TYPE = Release
 endif
+# Optional: space-separated absolute paths to extra ROS 2 package directories.
+EXTRA_ROS_PACKAGE_DIRS ?=
 
 CFLAGS_INTERNAL := $(X_CFLAGS)
 CXXFLAGS_INTERNAL := $(X_CXXFLAGS)
@@ -109,7 +111,15 @@ $(COMPONENT_PATH)/micro_ros_src/src:
 	touch src/common_interfaces/std_srvs/COLCON_IGNORE; \
 	touch src/rcl/rcl_yaml_param_parser/COLCON_IGNORE; \
     touch src/rcl_logging/rcl_logging_spdlog/COLCON_IGNORE; \
-    touch src/rcl_interfaces/test_msgs/COLCON_IGNORE;
+    touch src/rcl_interfaces/test_msgs/COLCON_IGNORE; \
+	if [ -n "$(strip $(EXTRA_ROS_PACKAGE_DIRS))" ]; then \
+	  for pkg_dir in $(EXTRA_ROS_PACKAGE_DIRS); do \
+	    test -f "$$pkg_dir/package.xml" || \
+	      (echo "Extra ROS package not found: $$pkg_dir" && exit 1); \
+	    pkg_name=$$(basename "$$pkg_dir"); \
+	    cp -R "$$pkg_dir" "src/$$pkg_name"; \
+	  done; \
+	fi
 
 $(COMPONENT_PATH)/micro_ros_src/install: configure_colcon_meta configure_toolchain $(COMPONENT_PATH)/micro_ros_dev/install $(COMPONENT_PATH)/micro_ros_src/src
 	cd $(UROS_DIR); \

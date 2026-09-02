@@ -30,6 +30,14 @@ set(external_project_cxxflags
     "${includes_cxx} ${definitions_cxx} ${options_cxx} ${system_includes_cxx}"
     )
 
+
+if(DEFINED MICROROS_EXTRA_PACKAGE_DIRS AND MICROROS_EXTRA_PACKAGE_DIRS)
+    string(REPLACE ";" " " _microros_extra_package_dirs
+        "${MICROROS_EXTRA_PACKAGE_DIRS}")
+else()
+    set(_microros_extra_package_dirs "")
+endif()
+
 include(ExternalProject)
 
 externalproject_add(libmicroros_project
@@ -46,6 +54,7 @@ externalproject_add(libmicroros_project
             X_RANLIB=${CMAKE_RANLIB}
             X_CXX=${CMAKE_CXX_COMPILER}
             COMPONENT_PATH=${MICROROS_DIR}
+            EXTRA_ROS_PACKAGE_DIRS=${_microros_extra_package_dirs}
             ZEPHYR_BASE=${ZEPHYR_BASE}
             PROJECT_BINARY_DIR=${PROJECT_BINARY_DIR}
     INSTALL_COMMAND ""
@@ -62,6 +71,7 @@ execute_process(
     COMMAND
         make -f libmicroros.mk get_package_names
             COMPONENT_PATH=${MICROROS_DIR}
+            EXTRA_ROS_PACKAGE_DIRS=${_microros_extra_package_dirs}
     WORKING_DIRECTORY
         ${MICROROS_DIR}
     OUTPUT_VARIABLE
