@@ -12,8 +12,12 @@ endif
 CFLAGS_INTERNAL := $(X_CFLAGS)
 CXXFLAGS_INTERNAL := $(X_CXXFLAGS)
 
-CFLAGS_INTERNAL := -c -I$(ZEPHYR_BASE)/include/posix -I$(PROJECT_BINARY_DIR)/include/generated $(CFLAGS_INTERNAL)
-CXXFLAGS_INTERNAL := -c -I$(ZEPHYR_BASE)/include/posix -I$(PROJECT_BINARY_DIR)/include/generated $(CXXFLAGS_INTERNAL)
+# Zephyr SDK 0.17 picolibc needs Annex-K typedefs and POSIX visibility
+# established before any libc header is parsed.
+MICROROS_PICOLIBC_DEFS := -D__STDC_WANT_LIB_EXT1__=1 -include sys/features.h
+
+CFLAGS_INTERNAL := -c -I$(ZEPHYR_BASE)/include/posix -I$(PROJECT_BINARY_DIR)/include/generated $(MICROROS_PICOLIBC_DEFS) $(CFLAGS_INTERNAL)
+CXXFLAGS_INTERNAL := -c -I$(ZEPHYR_BASE)/include/posix -I$(PROJECT_BINARY_DIR)/include/generated $(MICROROS_PICOLIBC_DEFS) $(CXXFLAGS_INTERNAL)
 
 all: $(COMPONENT_PATH)/libmicroros.a
 
