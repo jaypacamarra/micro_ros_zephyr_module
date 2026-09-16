@@ -1,4 +1,5 @@
 UROS_DIR = $(COMPONENT_PATH)/micro_ros_src
+OUT_DIR ?= $(COMPONENT_PATH)
 DEBUG ?= 0
 
 .DEFAULT_GOAL := all
@@ -21,11 +22,10 @@ MICROROS_PICOLIBC_DEFS := -D__STDC_WANT_LIB_EXT1__=1 -include sys/features.h
 CFLAGS_INTERNAL := -c -I$(ZEPHYR_BASE)/include/posix -I$(PROJECT_BINARY_DIR)/include/generated $(MICROROS_PICOLIBC_DEFS) $(CFLAGS_INTERNAL)
 CXXFLAGS_INTERNAL := -c -I$(ZEPHYR_BASE)/include/posix -I$(PROJECT_BINARY_DIR)/include/generated $(MICROROS_PICOLIBC_DEFS) $(CXXFLAGS_INTERNAL)
 
-all: $(COMPONENT_PATH)/libmicroros.a
+all: $(OUT_DIR)/libmicroros.a
 
 clean:
-	rm -rf $(COMPONENT_PATH)/libmicroros.a; \
-	rm -rf $(COMPONENT_PATH)/include; \
+	rm -rf $(OUT_DIR); \
 	rm -rf $(COMPONENT_PATH)/zephyr_toolchain.cmake; \
 	rm -rf $(COMPONENT_PATH)/micro_ros_dev; \
 	rm -rf $(COMPONENT_PATH)/micro_ros_src;
@@ -121,10 +121,13 @@ $(COMPONENT_PATH)/micro_ros_src/src:
 	  done; \
 	fi
 
-$(COMPONENT_PATH)/micro_ros_src/install: configure_colcon_meta configure_toolchain $(COMPONENT_PATH)/micro_ros_dev/install $(COMPONENT_PATH)/micro_ros_src/src
+$(OUT_DIR)/install: configure_colcon_meta configure_toolchain $(COMPONENT_PATH)/micro_ros_dev/install $(COMPONENT_PATH)/micro_ros_src/src
+	mkdir -p $(OUT_DIR); \
 	cd $(UROS_DIR); \
 	. ../micro_ros_dev/install/local_setup.sh; \
 	colcon build \
+		--build-base $(OUT_DIR)/colcon-build \
+		--install-base $(OUT_DIR)/install \
 		--merge-install \
 		--packages-ignore-regex=.*_cpp \
 		--metas $(COMPONENT_PATH)/configured_colcon.meta \
@@ -138,9 +141,9 @@ $(COMPONENT_PATH)/micro_ros_src/install: configure_colcon_meta configure_toolcha
 		-DCMAKE_TOOLCHAIN_FILE=$(COMPONENT_PATH)/zephyr_toolchain.cmake \
 		-DCMAKE_VERBOSE_MAKEFILE=OFF; \
 
-$(COMPONENT_PATH)/libmicroros.a: $(COMPONENT_PATH)/micro_ros_src/install
+$(OUT_DIR)/libmicroros.a: $(OUT_DIR)/install
 	mkdir -p $(UROS_DIR)/libmicroros; cd $(UROS_DIR)/libmicroros; \
-	for file in $$(find $(UROS_DIR)/install/lib/ -name '*.a'); do \
+	for file in $$(find $(OUT_DIR)/install/lib/ -name '*.a'); do \
 		folder=$$(echo $$file | sed -E "s/(.+)\/(.+).a/\2/"); \
 		mkdir -p $$folder; cd $$folder; $(X_AR) x $$file; \
 		for f in *; do \
@@ -148,6 +151,6 @@ $(COMPONENT_PATH)/libmicroros.a: $(COMPONENT_PATH)/micro_ros_src/install
 		done; \
 		cd ..; rm -rf $$folder; \
 	done ; \
-	$(X_AR) rc libmicroros.a *.obj; cp libmicroros.a $(COMPONENT_PATH); ${X_RANLIB} $(COMPONENT_PATH)/libmicroros.a; \
+	$(X_AR) rc libmicroros.a *.obj; cp libmicroros.a $(OUT_DIR); ${X_RANLIB} $(OUT_DIR)/libmicroros.a; \
 	cd ..; rm -rf libmicroros; \
-	cp -R $(UROS_DIR)/install/include $(COMPONENT_PATH)/include;
+	rm -rf $(OUT_DIR)/include; cp -R $(OUT_DIR)/install/include $(OUT_DIR)/include;
